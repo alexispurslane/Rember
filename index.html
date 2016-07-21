@@ -1,0 +1,20 @@
+<html>
+  <head>
+    <title>Rember App</title>
+  </head>
+  <body>
+    <div id="output"></div>
+    <script src="glimmer/assets/loader.js"></script>
+    <script>loader.noConflict({ define: 'enifed' });</script>
+    <script src="glimmer/dist/amd/glimmer-common.amd.js"></script>
+    <script src="glimmer/dist/amd/glimmer-compiler.amd.js"></script>
+    <script src="glimmer/dist/amd/glimmer-runtime.amd.js"></script>
+    <script src="build/event-handling.amd.js"></script>
+    <script src="build/component.amd.js"></script>
+    <script src="build/app.amd.js"></script>
+    <script>
+      var app = require("app");
+      app.init();
+    </script> 
+  </body>
+</html>

@@ -22,3 +22,10 @@ but apparently you need to to get some important dependancies. This
 should fix the problem, and I should be on my way to linking Zepto and
 a POJO model to Glimmer. Once that is done, I'll set up a build
 process using ember-cli that will complie my TypeScript.
+
+Now I am done writing the component and app part of the
+mini-framework. I just have to decide how to handle events, which
+should be fairly simple. This testing this is pending getting bower to
+work, though, so none of this is testable. I will also begin writing
+an exmaple app with my mini-framework. I also still need to get
+Ember-CLI working as a build tool, which should be reasonably simple.
