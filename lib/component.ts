@@ -45,9 +45,9 @@ export class Component {
 }
 
 export class App {
-    private template: string;
     private outputElement: string;
     private attrs: any;
+    public template: string;
     public app: any;
     public env: TestEnvironment;
 

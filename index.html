@@ -12,8 +12,9 @@
     <script src="build/event-handling.amd.js"></script>
     <script src="build/component.amd.js"></script>
     <script src="build/app.amd.js"></script>
-    <script>
+    <script type="text/javascript">
       var app = require("app");
+      app.template = ["<h1>{{text}}</h1>"].join("\n");
       app.init();
     </script> 
   </body>
