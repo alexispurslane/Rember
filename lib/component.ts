@@ -1,6 +1,8 @@
 import { UpdateableReference } from 'glimmer-object-reference';
 import { TestEnvironment, TestDynamicScope } from 'glimmer-test-helpers';
 
+type HandlerFun = (c: Component, s: string, e: string) => null;
+
 export class Component {
     public attrs: any;
     public element: Element = null;
@@ -12,12 +14,23 @@ export class Component {
     constructor(attrs: any, template: string) {
         this.attrs = attrs;
         this.attrs.template = template;
-        this.attrs.env.registerEmberishGlimmerComponent(this.attrs.name, this as any,
+        this.attrs.app.env.registerEmberishGlimmerComponent(this.attrs.name, this as any,
             this.attrs.template)
     }
 
     set(key: string, value: any) {
         this[key] = value;
+    }
+
+    handle(selector: string, eventType: string, handler: HandlerFun) {
+        let element = document.querySelector(selector);
+        element.addEventListener(eventType, function () {
+            handler(this, selector, eventType);
+        });
+    }
+
+    handleClick(selector: string, handler: HandlerFun) {
+        this.handle(selector, 'click', handler);
     }
 
     didInitAttrs() { }
@@ -36,22 +49,22 @@ export class App {
     private outputElement: string;
     private attrs: any;
     public app: any;
-    public environment: TestEnvironment;
+    public env: TestEnvironment;
 
     constructor(attrs: any, template: string) {
         this.template = template;
         this.attrs = attrs;
-        this.environment = new TestEnvironment();
-        this.app = this.environment.compile(this.template);
+        this.env = new TestEnvironment();
+        this.app = this.env.compile(this.template);
     }
 
     init() {
         let output = document.getElementById(this.attrs.outputElement);
-        this.environment.begin();
-        this.app.render(this.attrs.model, this.environment, {
+        this.env.begin();
+        this.app.render(this.attrs.model, this.env, {
             appendTo: output,
             dynamicScope: new TestDynamicScope(null)
         });
-        this.environment.commit();
+        this.env.commit();
     }
 }
