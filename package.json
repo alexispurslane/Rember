@@ -1,0 +1,26 @@
+{
+  "name": "rember",
+  "version": "0.0.1",
+  "description": "A lightweight Ember using Glimmer 2, Typescript, Zepto, and Ember-Cli",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/christopherdumas/Rember.git"
+  },
+  "keywords": [
+    "glimmer",
+    "typescript",
+    "zepto",
+    "ember",
+    "ember-cli"
+  ],
+  "author": "christopherdumas",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/christopherdumas/Rember/issues"
+  },
+  "homepage": "https://github.com/christopherdumas/Rember#readme"
+}
