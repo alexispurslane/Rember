@@ -9,12 +9,12 @@
     <script src="glimmer/dist/amd/glimmer-common.amd.js"></script>
     <script src="glimmer/dist/amd/glimmer-compiler.amd.js"></script>
     <script src="glimmer/dist/amd/glimmer-runtime.amd.js"></script>
-    <script src="build/event-handling.amd.js"></script>
-    <script src="build/component.amd.js"></script>
-    <script src="build/app.amd.js"></script>
+    <script src="build/lib/event-handling.js"></script>
+    <script src="build/lib/component.js"></script>
+    <script src="build/src/app.js"></script>
     <script type="text/javascript">
       var app = require("app");
-      app.template = ["<h1>{{text}}</h1>"].join("\n");
+      app.template = "<h1>{{text}}</h1>";
       app.init();
     </script> 
   </body>
