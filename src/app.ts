@@ -10,21 +10,33 @@ class DaySummaryComponent extends Component {
         d.setDate(d.getDate() + this.attrs.num);
         return `${d.getMonth()}/${d.getDay()}/${d.getFullYear()}`;
     }
+    public remove() {
+        alert(this.attrs.num);
+    }
+    get show() {
+        return this.attrs.num != 0;
+    }
 }
 
 DaySummaryComponent.createWithTemplate(env, `
 <li>
-    <h2>{{@title}}</h2>
+  {{#if show}}
+    <h2>{{@num}}: {{@title}}</h2>
     <hr/>
-    <b>{{date}}</b>
+    <b>{{this.date}}</b>
+    <button {{action this "remove"}}>X</button>
+  {{/if}}
 </li>`)
 
+
+
 let self, result;
-const days = [
-    { num: 1, title: 'Bower, the Undocumented Necessity' },
-    { num: 2, title: 'The Future!' }
-];
-const model = { days };
+const model = {
+    days: [
+        { num: 1, title: 'Bower, the Undocumented Necessity' },
+        { num: 2, title: 'The Future!' }
+    ]
+};
 const app = new App(env, model, document.body, `
 <h1>Days</h1>
 <ol>

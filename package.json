@@ -22,5 +22,12 @@
   "bugs": {
     "url": "https://github.com/christopherdumas/Rember/issues"
   },
-  "homepage": "https://github.com/christopherdumas/Rember#readme"
+  "homepage": "https://github.com/christopherdumas/Rember#readme",
+  "devDependencies": {
+    "broccoli": "^0.16.9",
+    "broccoli-funnel": "^1.0.3",
+    "broccoli-static-compiler": "^0.2.2",
+    "broccoli-typescript": "^0.4.0",
+    "broccoli-typescript-compiler": "^0.6.2"
+  }
 }

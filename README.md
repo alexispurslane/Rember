@@ -8,7 +8,7 @@ Rember uses a few core technologies:
 2. Zepto
 3. TypeScript
 4. Mini-Framework
-5. Ember-Cli
+5. Broccili
 
 ## Glimmer 2
 
@@ -31,8 +31,6 @@ Rember will come with a mini-framework to hold together the rest of
 these technologies. This mini-framework will handle things like
 linking the model up to the Zepto event handlers and Glimmer.
 
-## Ember-Cli
+## Broccili
 
-Although it has "Ember" in its name, Ember-Cli is actually a really
-good stand-alone build tool, and since Rember will need a build tool,
-why reinvent the wheel?
+Becouse we need a way to build, don't we?
