@@ -7,43 +7,48 @@ let env = new TestEnvironment();
 class DaySummaryComponent extends Component {
     get date() {
         let d = new Date('6/21/16');
-        d.setDate(d.getDate() + this.attrs.num);
+        d.setDate(d.getDate() + this.attrs.day.num);
         return `${d.getMonth()}/${d.getDay()}/${d.getFullYear()}`;
     }
     public remove() {
-        alert(this.attrs.num);
     }
-    get show() {
-        return this.attrs.num != 0;
+    public edit() {
+        model.days[this.attrs.day.num - 1].title = "foo";
+        self.update(model);
     }
 }
 
 DaySummaryComponent.createWithTemplate(env, `
-<li>
-  {{#if show}}
-    <h2>{{@num}}: {{@title}}</h2>
+<li class="card">
+    <h2 style="padding-bottom: 0; margin-bottom: 0;">{{@day.num}}: {{@day.title}}</h2>
+    <em style="color=gray;">{{this.date}}</em>
+    <p>{{@day.body}}</p>
     <hr/>
-    <b>{{this.date}}</b>
-    <button {{action this "remove"}}>X</button>
-  {{/if}}
+    <button class="primary" style="width: 100px; display: inline-block;" {{action this "edit"}}>Edit</button>
+    <button style="display: inline-block; width: 100px;" {{action this "remove"}}>X</button>
 </li>`)
 
-
-
-let self, result;
 const model = {
     days: [
-        { num: 1, title: 'Bower, the Undocumented Necessity' },
-        { num: 2, title: 'The Future!' }
+        {
+            num: 1, title: 'Bower and Hitchhiking',
+            body: 'Glimmer requires some packages to be installed using bower, although it doesn\'t state this. Once that was fixed, though, I could hitchhike onto Glimmer\'s build system using its demos folder.'
+        },
+        { num: 2, title: 'A Basic Framework' },
+        { num: 3, title: 'Event Handling' }
     ]
 };
-const app = new App(env, model, document.body, `
+
+let self = new UpdatableReference(model);
+const app = new App(env, self, document.body, `
 <h1>Days</h1>
 <ol>
 {{#each days key="num" as |day|}}
-  <day-summary num={{day.num}} title={{day.title}} date={{day.date}} />
+  <day-summary day={{day}} />
 {{/each}}
 </ol>`)
+
+DaySummaryComponent.addAppToLastManager(app);
 
 export function init() {
     app.init();
