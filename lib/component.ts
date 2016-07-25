@@ -29,16 +29,12 @@ export class Component {
     public static managers: ManagerHolder[] = [];
     public static index = 0;
     public managerIndex = 0;
+    public static template = ``;
 
-    static createWithTemplate(env: TestEnvironment, template: string) {
+    static createWithTemplate(env: TestEnvironment, app: App) {
         this.index++;
-        let ret = env.registerEmberishGlimmerComponent('day-summary', this as any, template);
-        this.managers.push({ manager: ret.manager, app: null });
-    }
-
-    // FIXME this is terrible. I am doing a Bad Thing.
-    static addAppToLastManager(app: App) {
-        this.managers[this.index - 1].app = app;
+        let ret = env.registerEmberishGlimmerComponent('day-summary', this as any, this.template);
+        this.managers.push({ manager: ret.manager, app: app });
     }
 
     static create({ attrs }: { attrs: any }): Component {
@@ -125,7 +121,8 @@ class ActionModifierManager implements ModifierManager<ActionModifier> {
         let name = this.componentIDS[component.name] + action;
         dom.setAttribute(element, 'onclick', `${name}();`);
         window[name] = () => {
-            (component[action].bind(component))();
+            (component[action].bind(component))(component.app.model);
+            component.app.self.update(component.app.model);
         }
     }
 
@@ -135,19 +132,24 @@ class ActionModifierManager implements ModifierManager<ActionModifier> {
 }
 
 export class App {
-    private env: any;
+    private env: TestEnvironment;
     private app: any;
     private template: string;
-    private self: UpdatableReference<any>;
     private targetElement: Element;
     private renderResult: RenderResult;
 
     public dynamicScope: TestDynamicScope;
+    public self: UpdatableReference<any>;
+    public model: any;
 
-    constructor(env: any, model: UpdatableReference<any>, targetElement: Element, template: string) {
+    constructor(env: TestEnvironment, model: any, self: UpdatableReference<any>, targetElement: Element, components: any[], template: string) {
         this.env = env;
         this.template = template;
-        this.self = model;
+        this.self = self;
+        this.model = model;
+        components.forEach((c) => {
+            c.createWithTemplate(this.env, this);
+        });
         this.app = this.env.compile(this.template);
 
         env.registerModifier('action', new ActionModifierManager());
@@ -171,15 +173,6 @@ export class App {
             this.clear = requestAnimationFrame(callback);
         }
         callback();
-    }
-
-    public update(c: Component) {
-        document.body.innerHTML = "";
-        this.app.render(this.self, this.env, {
-            appendTo: document.body,
-            dynamicScope: this.dynamicScope
-        })
-        this.env.commit();
     }
 }
 
