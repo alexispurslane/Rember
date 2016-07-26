@@ -10,7 +10,7 @@ import {
     RenderResult
 } from 'glimmer-runtime';
 
-import { Destroyable } from 'glimmer-util';
+import { Destroyable, merge } from 'glimmer-util';
 
 const ID = () => '_' + Math.random().toString(36).substr(2, 9);
 // Math.random should be unique because of its seeding algorithm.
@@ -29,7 +29,15 @@ export class Component {
     public static managers: ManagerHolder[] = [];
     public static index = 0;
     public managerIndex = 0;
-    public static template = ``;
+    public static get template() {
+        return ``;
+    }
+
+    public getComponentElement(e: string) {
+        return document.getElementById(this.name + e);
+    }
+
+    public destroy() { }
 
     static createWithTemplate(env: TestEnvironment, app: App) {
         this.index++;
@@ -77,31 +85,19 @@ export class Component {
     didRender() { }
 }
 
-interface ActionModifier {
+interface BaseModifier {
     element: Element;
     args: EvaluatedArgs;
     dom: IDOMHelper;
     destructor: Destroyable;
 }
 
-class ActionModifierManager implements ModifierManager<ActionModifier> {
-    private componentIDS: any = {};
-    install(element: Element, args: EvaluatedArgs, dom: IDOMHelper, dynamicScope: DynamicScope): ActionModifier {
-
-
+class ComponentIDModifierManager implements ModifierManager<BaseModifier> {
+    install(element: Element, args: EvaluatedArgs, dom: IDOMHelper, dynamicScope: DynamicScope): BaseModifier {
         let component = args.positional.at(0).value();
-        let action = args.positional.at(1).value();
-        let id = this.componentIDS[component.name];
-        let name = id + action;
-        if (id == null || id == undefined) {
-            let id = ID();
-            this.componentIDS[component.name] = id;
-            let name = id + action;
-            dom.setAttribute(element, 'onclick', `${name}();`);
-        }
-        window[name] = () => {
-            (component[args.positional.at(1).value()].bind(component))();
-        }
+        let id = args.positional.at(1).value();
+        element.setAttribute('id', id + component.name);
+
         return {
             element,
             args,
@@ -114,21 +110,75 @@ class ActionModifierManager implements ModifierManager<ActionModifier> {
         }
     }
 
-    update(modifier: ActionModifier, element: Element, args: EvaluatedArgs, dom: IDOMHelper, dynamicScope: DynamicScope) {
+    update(modifier: BaseModifier, element: Element, args: EvaluatedArgs, dom: IDOMHelper, dynamicScope: DynamicScope) {
+        let component = args.positional.at(0).value();
+        let id = args.positional.at(1).value();
+        element.setAttribute('id', id + component.name);
+    }
 
+    getDestructor(modifier: BaseModifier): Destroyable {
+        return modifier.destructor;
+    }
+}
+
+class ActionModifierManager implements ModifierManager<BaseModifier> {
+    private componentIDS: any = {};
+
+    private createEventCallback(component: Component, action: string) {
+        return () => {
+            (component[action].bind(component))(component.app.model);
+
+            let storageType = component.app.options.storageType;
+            if (storageType != 'none') {
+                let name = component.app.options.name;
+                let stringifiedModel = stringifyModel(component.app.model);
+                let storage = getStorage(storageType);
+
+                if (storage) storage.setItem(name, stringifiedModel);
+            }
+        }
+    }
+    install(element: Element, args: EvaluatedArgs, dom: IDOMHelper, dynamicScope: DynamicScope): BaseModifier {
+        let component = args.positional.at(0).value();
+        let action = args.positional.at(1).value();
+        let id = this.componentIDS[component.name];
+        let name = id + action;
+        if (id == null || id == undefined) {
+            let id = ID();
+            this.componentIDS[component.name] = id;
+            let name = id + action;
+            dom.setAttribute(element, 'onclick', `${name}();`);
+        }
+        window[name] = this.createEventCallback(component, action);
+
+        return {
+            element,
+            args,
+            dom,
+            destructor: {
+                destroy() {
+                    dom.removeAttribute(element, 'onclick');
+                }
+            }
+        }
+    }
+
+    update(modifier: BaseModifier, element: Element, args: EvaluatedArgs, dom: IDOMHelper, dynamicScope: DynamicScope) {
         let component = args.positional.at(0).value();
         let action = args.positional.at(1).value();
         let name = this.componentIDS[component.name] + action;
         dom.setAttribute(element, 'onclick', `${name}();`);
-        window[name] = () => {
-            (component[action].bind(component))(component.app.model);
-            component.app.self.update(component.app.model);
-        }
+        window[name] = this.createEventCallback(component, action);
     }
 
-    getDestructor(modifier: ActionModifier): Destroyable {
+    getDestructor(modifier: BaseModifier): Destroyable {
         return modifier.destructor;
     }
+}
+
+interface ModelOptions {
+    name: string;
+    storageType: string;
 }
 
 export class App {
@@ -141,18 +191,31 @@ export class App {
     public dynamicScope: TestDynamicScope;
     public self: UpdatableReference<any>;
     public model: any;
+    public options: ModelOptions;
 
     constructor(env: TestEnvironment, model: any, self: UpdatableReference<any>, targetElement: Element, components: any[], template: string) {
         this.env = env;
         this.template = template;
         this.self = self;
-        this.model = model;
+        this.options = self.value().options;
+        let type = this.options.storageType;
+        if (type != 'none') {
+            let storage = getStorage(type);
+            this.model = JSON.parse(storage.getItem(this.options.name));
+            if (!this.model) {
+                this.model = model;
+                storage.setItem(this.options.name, JSON.stringify(model));
+            }
+        } else {
+            this.model = model;
+        }
         components.forEach((c) => {
             c.createWithTemplate(this.env, this);
         });
         this.app = this.env.compile(this.template);
 
         env.registerModifier('action', new ActionModifierManager());
+        env.registerModifier('id', new ComponentIDModifierManager());
     }
 
     public init() {
@@ -176,3 +239,19 @@ export class App {
     }
 }
 
+export function stringifyModel(obj) {
+    return JSON.stringify(obj, (k, v) => {
+        if (k == "_meta") {
+            return null;
+        }
+        return v;
+    });
+}
+
+function getStorage(st: string) {
+    if (st == 'local') {
+        return localStorage;
+    } else if (st == 'session') {
+        return sessionStorage;
+    }
+}

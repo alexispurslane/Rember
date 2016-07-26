@@ -1,11 +1,12 @@
 import { TestEnvironment, TestDynamicScope } from 'glimmer-test-helpers';
 import { UpdatableReference } from 'glimmer-object-reference';
-import { Component, App } from './component';
+import { Component, App, stringifyModel } from './component';
 
 let env = new TestEnvironment();
 
 class DaySummaryComponent extends Component {
-    public static template = `
+    public static get template() {
+        return `
 <li class="card">
   <h2 style="display:inline-block; margin: 0;">{{number}}: </h2>
   {{#unless editingMode}}
@@ -13,11 +14,15 @@ class DaySummaryComponent extends Component {
     <br/>
   {{else}}
     <input type="text" value="{{@day.title}}"
-      class="h1-edit" id="newTitle{{number}}"/>
+      class="h1-edit" {{id this "newTitle"}}/>
     <br/>
   {{/unless}}
   <em style="color=gray;">{{this.date}}</em>
-  <p>{{@day.body}}</p>
+  {{#unless editingMode}}
+    <p>{{@day.body}}</p>
+  {{else}}
+    <textarea class="p-edit" cols="123" {{id this "newText"}}>{{@day.body}}</textarea>
+  {{/unless}}
   <hr/>
   {{#unless editingMode}}
     <button class="primary" style="width: 100px; display: inline-block;" {{action this "edit"}}>Edit</button>
@@ -26,7 +31,8 @@ class DaySummaryComponent extends Component {
   {{/unless}}
 
   <button style="display: inline-block; width: 100px;" {{action this "remove"}}>X</button>
-</li>`
+</li>`;
+    }
     get number() {
         return this.attrs.day.num + 1;
     }
@@ -38,34 +44,57 @@ class DaySummaryComponent extends Component {
     public remove(m) {
         delete m.days[this.attrs.num];
     }
+
     public editingMode: boolean = false;
     public edit(m) {
-        this.editingMode = !this.editingMode;
-        if (!this.editingMode) {
-            let newText = document.getElementById("newTitle" + this.number).value;
-            m.days[this.attrs.day.num].title = newText;
+        if (this.editingMode) {
+            let newTitle = this.getComponentElement("newTitle").value;
+            m.days[this.attrs.day.num].title = newTitle;
+
+            let newText = this.getComponentElement("newText").value;
+            m.days[this.attrs.day.num].body = newText;
         }
+        this.editingMode = !this.editingMode;
     }
 }
 
-const model = {
+let model = {
     days: [
         {
             num: 0, title: 'Bower and Hitchhiking',
             body: 'Glimmer requires some packages to be installed using bower, although it doesn\'t state this. Once that was fixed, though, I could hitchhike onto Glimmer\'s build system using its demos folder.'
         },
-        { num: 1, title: 'A Basic Framework' },
-        { num: 2, title: 'Event Handling' }
+        { num: 1, title: 'A Basic Framework', body: "" },
+        { num: 2, title: 'Event Handling', body: "" }
     ]
 };
 
-let self = new UpdatableReference(model);
+let options = {
+    name: 'daysModel',
+    storageType: 'local'
+}
+let self = new UpdatableReference({ model, options });
 const app = new App(env, model, self, document.body, [DaySummaryComponent], `
+<div class="center">
 <h1>Days</h1>
 <ol>
-{{#each days key="num" as |day|}}
+{{#each model.days key="num" as |day|}}
   <day-summary day={{day}} />
 {{/each}}
-</ol>`)
+<button class="primary" id="new">+</button>
+</ol>
+</div>`)
 
-export function init() { app.init(); };
+export function init() {
+    app.init();
+    document.getElementById("new").addEventListener('click', () => {
+        model.days.push({
+            num: model.days[model.days.length - 1].num + 1,
+            title: "Untitled",
+            body: ""
+        })
+        if (options.storageType == 'local') {
+            localStorage.setItem(options.name, stringifyModel(model));
+        }
+    });
+};
